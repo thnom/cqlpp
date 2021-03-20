@@ -1,0 +1,143 @@
+.phony=clean
+.phony=all
+
+DEPENDFILE=dependencies
+
+include include.make
+
+SOURCES=\
+Abstractions\
+BigintValue\
+BinaryValue\
+BitValue\
+BoundColumnBigint\
+BoundColumnBool\
+BoundColumnChar\
+BoundColumnDate\
+BoundColumnDecimal\
+BoundColumnDouble\
+BoundColumnFloat\
+BoundColumnInt\
+BoundColumnLong\
+BoundColumnPCharShort\
+BoundColumnPChar\
+BoundColumnPUCharShort\
+BoundColumnPUChar\
+BoundColumnShort\
+BoundColumnString\
+BoundColumnTime\
+BoundColumnTimestamp\
+BoundColumnUnsignedChar\
+BoundColumnUnsignedInt\
+BoundColumnUnsignedLong\
+BoundColumnUnsignedShort\
+BufferPages\
+CharUCValue\
+CharValue\
+Clibs\
+Columns\
+CommonMisc\
+CqlCommonGlobal\
+CqlConfigurationFlex\
+CqlConfigurationParse\
+CqlFlexScanner\
+CqlInstance\
+CqlIsamGlobal\
+CqlMachine\
+CqlMetadata\
+CqlSqlBisonParser\
+CqlSqlGlobal\
+CqlStrings\
+Cursor\
+DatabaseHandle\
+DateValue\
+DecimalValue\
+Dictionaries\
+Elements\
+EnvironmentHandle\
+ErrorManager\
+Expression\
+Files\
+FloatValue\
+ForeignKeys\
+FunctionInstructions\
+Indices\
+Instructions\
+IntegerValue\
+IsamMisc\
+Logger\
+LongvarbinaryValue\
+LongvarcharValue\
+MemoryIndex\
+MemoryIndices\
+Nodes\
+Parser\
+Predicates\
+RealValue\
+Reports\
+SegmentedKeys\
+SelectExpression\
+SmallintValue\
+SqlHandle\
+SqlMisc\
+StatementHandle\
+StringLists\
+SystemTables\
+Tables\
+TempBuffer\
+TimeValue\
+TimestampValue\
+TinyintValue\
+Transactions\
+VarbinaryValue\
+VarcharValue\
+Views
+
+OBJECTS := $(foreach name, $(SOURCES), $(name).o)
+
+LIBRARY_SOURCES=Library
+LIBRARY_OBJECTS := $(foreach name, $(LIBRARY_SOURCES), $(name).o)
+
+INTERPRETER_SOURCES=Interpreter
+INTERPRETER_OBJECTS := $(foreach name, $(INTERPRETER_SOURCES), $(name).o)
+
+BIGTEST_SOURCES=BigTest BigTest1 BigTest2 BigTest3 BigTest4
+BIGTEST_OBJECTS := $(foreach name, $(BIGTEST_SOURCES), $(name).o)
+
+METATEST_SOURCES=MetaTest
+METATEST_OBJECTS := $(foreach name, $(METATEST_SOURCES), $(name).o)
+
+LIBRARY=libcql.a
+SHARED_LIBRARY=libcql.so
+
+INTERPRETER=interpreter
+
+BIGTEST=BigTest
+
+CqlSqlBisonParser.o: CqlSqlBisonParser.cpp CqlSqlBisonParser.h
+	$(CCNOWARN) -DYYPARSE_PARAM='SqlHandle *dbsql' CqlSqlBisonParser.cpp
+
+CqlFlexScanner.o: CqlFlexScanner.cpp CqlSqlBisonParser.h
+	$(CC_NO_SHADOW) CqlFlexScanner.cpp
+
+all: $(LIBRARY) $(SHARED_LIBRARY) $(INTERPRETER) $(BIGTEST)
+
+$(LIBRARY): $(OBJECTS) $(LIBRARY_OBJECTS)
+	- rm $(LIBRARY)
+	ar rv $(LIBRARY) $(OBJECTS) $(LIBRARY_OBJECTS)
+	ranlib $(LIBRARY)
+
+$(SHARED_LIBRARY): $(LIBRARY_OBJECTS) $(OBJECTS)
+	- rm $(SHARED_LIBRARY)
+	g++ $(DEBUG) -shared -o $(SHARED_LIBRARY) $(LIBRARY_OBJECTS) $(OBJECTS)
+
+$(INTERPRETER): $(INTERPRETER_OBJECTS) $(OBJECTS)
+	- rm $(INTERPRETER)
+	$(LINK) $(DEBUG) -o $(INTERPRETER) $(INTERPRETER_OBJECTS) $(OBJECTS)
+
+#  done with .o's instead of the library to get better debugging symbols
+$(BIGTEST): $(BIGTEST_OBJECTS) $(LIBRARY_OBJECTS) $(OBJECTS)
+	- rm $(BIGTEST)
+	$(LINK) $(DEBUG) -o $(BIGTEST) $(BIGTEST_OBJECTS) $(LIBRARY_OBJECTS) $(OBJECTS)
+
+include $(DEPENDFILE)
